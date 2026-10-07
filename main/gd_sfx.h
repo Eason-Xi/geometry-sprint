@@ -18,6 +18,7 @@ typedef enum {
     GD_SFX_CHECKPOINT,    // 放置检查点
     GD_SFX_COMPLETE,      // 关卡完成
     GD_SFX_NEWBEST,       // 新纪录
+    GD_SFX_DEATH_TONE,    // 死亡音效的下坠音层(内部使用,随 GD_SFX_DEATH 一起触发)
     GD_SFX_COUNT,
 } gd_sfx_id_t;
 
@@ -44,5 +45,5 @@ bool gd_sfx_busy(const gd_sfx_t *s);
 void gd_sfx_stop_all(gd_sfx_t *s);
 // 把音效叠加到 pcm(饱和截断)。gain 0..256(256 = 原始音量)。
 void gd_sfx_mix(gd_sfx_t *s, int16_t *pcm, int n, int gain);
-// 音效总时长(ms),用于测试与界面节奏。
+// 音效总时长(ms,含叠加层),用于测试与界面节奏。
 uint32_t gd_sfx_duration_ms(uint8_t id);

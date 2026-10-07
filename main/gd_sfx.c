@@ -16,12 +16,16 @@ typedef struct {
 typedef struct {
     const seg_t *seg;
     uint8_t n;
+    uint8_t layer;             // 同时触发的叠加层(0 = 无)
 } sfx_def_t;
 
 static const seg_t S_MOVE[] = { { 1200, 1200, 22, W_SQUARE, 30 } };
 static const seg_t S_OK[] = { { 880, 880, 40, W_SQUARE, 34 }, { 1320, 1320, 60, W_SQUARE, 34 } };
 static const seg_t S_BACK[] = { { 1320, 1320, 35, W_SQUARE, 30 }, { 660, 660, 60, W_SQUARE, 30 } };
-static const seg_t S_DEATH[] = { { 3200, 400, 320, W_NOISE, 85 } };
+// 死亡:短促的"咔嚓"碎裂噪声,叠一层快速下坠的方波"啾——"(见 GD_SFX_DEATH_TONE)。
+// 每层只有一段:段内包络连续,滑音不会出现断口。
+static const seg_t S_DEATH[] = { { 2000, 250, 110, W_NOISE, 90 } };
+static const seg_t S_DEATH_TONE[] = { { 640, 70, 260, W_SQUARE, 40 } };
 static const seg_t S_CKPT[] = { { 1046, 1046, 45, W_TRIANGLE, 70 }, { 1568, 1568, 80, W_TRIANGLE, 70 } };
 static const seg_t S_COMPLETE[] = {
     { 523, 523, 100, W_SQUARE, 40 }, { 659, 659, 100, W_SQUARE, 40 }, { 784, 784, 100, W_SQUARE, 40 },
@@ -32,16 +36,18 @@ static const seg_t S_NEWBEST[] = {
     { 1568, 1568, 220, W_TRIANGLE, 75 },
 };
 
-#define DEF(a) { a, (uint8_t)(sizeof(a) / sizeof((a)[0])) }
+#define DEF(a) { a, (uint8_t)(sizeof(a) / sizeof((a)[0])), 0 }
+#define DEF_LAYER(a, l) { a, (uint8_t)(sizeof(a) / sizeof((a)[0])), l }
 static const sfx_def_t DEFS[GD_SFX_COUNT] = {
-    [GD_SFX_NONE] = { NULL, 0 },
+    [GD_SFX_NONE] = { NULL, 0, 0 },
     [GD_SFX_MOVE] = DEF(S_MOVE),
     [GD_SFX_OK] = DEF(S_OK),
     [GD_SFX_BACK] = DEF(S_BACK),
-    [GD_SFX_DEATH] = DEF(S_DEATH),
+    [GD_SFX_DEATH] = DEF_LAYER(S_DEATH, GD_SFX_DEATH_TONE),
     [GD_SFX_CHECKPOINT] = DEF(S_CKPT),
     [GD_SFX_COMPLETE] = DEF(S_COMPLETE),
     [GD_SFX_NEWBEST] = DEF(S_NEWBEST),
+    [GD_SFX_DEATH_TONE] = DEF(S_DEATH_TONE),
 };
 
 void gd_sfx_init(gd_sfx_t *s, uint32_t sample_rate) {
@@ -50,8 +56,7 @@ void gd_sfx_init(gd_sfx_t *s, uint32_t sample_rate) {
     s->inc_per_hz = (uint32_t)(((uint64_t)1 << 32) / s->rate);
 }
 
-void gd_sfx_play(gd_sfx_t *s, uint8_t id) {
-    if (id == GD_SFX_NONE || id >= GD_SFX_COUNT) return;
+static void start_voice(gd_sfx_t *s, uint8_t id) {
     int slot = -1;
     for (int i = 0; i < GD_SFX_VOICES; i++) {
         if (!s->v[i].id) {
@@ -68,6 +73,12 @@ void gd_sfx_play(gd_sfx_t *s, uint8_t id) {
     s->v[slot] = (gd_sfx_voice_t){ .id = id, .lfsr = 0xACE1u + (uint32_t)slot * 77u, .age = ++s->clock };
 }
 
+void gd_sfx_play(gd_sfx_t *s, uint8_t id) {
+    if (id == GD_SFX_NONE || id >= GD_SFX_COUNT) return;
+    start_voice(s, id);
+    if (DEFS[id].layer) start_voice(s, DEFS[id].layer);
+}
+
 bool gd_sfx_busy(const gd_sfx_t *s) {
     for (int i = 0; i < GD_SFX_VOICES; i++) {
         if (s->v[i].id) return true;
@@ -79,11 +90,16 @@ void gd_sfx_stop_all(gd_sfx_t *s) {
     for (int i = 0; i < GD_SFX_VOICES; i++) s->v[i].id = 0;
 }
 
-uint32_t gd_sfx_duration_ms(uint8_t id) {
-    if (id >= GD_SFX_COUNT) return 0;
+static uint32_t own_ms(uint8_t id) {
     uint32_t ms = 0;
     for (uint8_t i = 0; i < DEFS[id].n; i++) ms += DEFS[id].seg[i].ms;
     return ms;
+}
+
+uint32_t gd_sfx_duration_ms(uint8_t id) {
+    if (id >= GD_SFX_COUNT) return 0;
+    const uint32_t ms = own_ms(id), layer = DEFS[id].layer ? own_ms(DEFS[id].layer) : 0;
+    return ms > layer ? ms : layer;
 }
 
 // 一个采样(−32767..32767 × 音量)。
