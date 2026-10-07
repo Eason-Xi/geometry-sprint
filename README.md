@@ -133,5 +133,8 @@ pages stay in the repository for host tests but are not built into the firmware.
   merged image with the music pack 6.74 MB).
 - Host preview: all six levels auto-play to completion; partial refresh differs from a full redraw by 0 pixels;
   LVGL pool peak about 9 KB of 40 KB; gameplay pushes about 33% of the screen's pixels per frame on average.
-- Not yet verified on hardware: landscape orientation and key label positions, real frame rate and audio sync,
-  hold-to-jump and ship feel, music playback and volume, save persistence across power loss, and the battery reading.
+- Device test: on 2026-10-07 the developer flashed the delivered merged image (SHA-256 `b2094002…be6437`) and
+  tested it on the device; the result passed.
+- Still not covered: the device test was an overall acceptance, so the serial `perf` figures (frame rate, memory,
+  audio underruns) were not recorded item by item; the keys-at-bottom landscape orientation
+  (`BSP_LVGL_LANDSCAPE_KEYS_BOTTOM`) is unused by this app and not verified on hardware.

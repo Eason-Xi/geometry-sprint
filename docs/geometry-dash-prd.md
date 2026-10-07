@@ -9,7 +9,7 @@
 | Application | Geometry Sprint: an offline, single-player, personal-use side-scrolling rhythm runner that pays tribute to *Geometry Dash* |
 | Target device | FoloToy AI Passport: ESP32-C3, 8 MB Flash, no PSRAM, ST7789P3 240×320, three-button ADC, ES8311 audio |
 | Branch | `feature/geometry-dash` (from `main` `0b9e4c8`) |
-| Status | Implemented per this document on 2026-10-07 (M0–M3 and most P1 items); host tests and firmware build pass, device acceptance pending; see §16 for the implementation record and deviations |
+| Status | Implemented per this document on 2026-10-07 (M0–M3 and most P1 items); host tests, firmware build, and device test all pass; see §16 for the implementation record and deviations |
 | Confirmed decisions | Landscape 320×240 with side keys on top; cube + ship + jump pads/orbs + gravity flip; background music from the first 6 local original tracks |
 
 This document is the requirements and acceptance basis for the application. Implementation follows
@@ -510,8 +510,10 @@ Deviations from the first draft:
 - The solver replays are "centered": each press moves to the middle of its feasible range, for auto-play and window statistics.
 - A host LVGL preview replaces the H5/Wasm preview (§12 updated).
 
-Not yet done or verified: every case in the §13.2 device scenario table; the key label position table, real frame
-rate, audio sync, hold-to-jump and ship feel, and ADC release latency all need device measurements.
+Device: on 2026-10-07 the developer flashed the delivered merged image (SHA-256 `b2094002…be6437`) and tested it on
+the device; the result passed. It was an overall acceptance: the §13.2 scenario table and the §9.2 frame rate, memory,
+and audio underrun figures were not recorded item by item; the keys-at-bottom landscape orientation is unused by
+this app and not verified on hardware.
 
 ## Appendix A: Reference implementations
 
