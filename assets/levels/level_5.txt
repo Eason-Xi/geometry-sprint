@@ -1,6 +1,6 @@
-; 几何冲刺关卡 5:Base After Base(原创布局,按节拍编排)
-name: Base After Base
-artist: DJVI
+; 几何冲刺关卡 5:Base Breaker(原创布局,按节拍编排)
+name: Base Breaker
+artist: Original Score
 difficulty: hard
 theme: 4
 track: 5

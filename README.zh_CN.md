@@ -36,12 +36,12 @@
 
 | # | 关卡(曲目) | 难度 | 新机制 |
 | --- | --- | --- | --- |
-| 1 | Stereo Madness | 简单 | 方块跳跃、平台、第一段飞船 |
-| 2 | Back On Track | 简单 | 黄色跳板 |
-| 3 | Polargeist | 普通 | 黄色跳环、连跳环 |
-| 4 | Dry Out | 普通 | 重力门、蓝色跳环 |
-| 5 | Base After Base | 困难 | 三连刺、蓝色跳板、重力翻转 |
-| 6 | Can't Let Go | 困难 | 综合:连跳环、重力切换、窄飞船通道 |
+| 1 | Neon Takeoff | 简单 | 方块跳跃、平台、第一段飞船 |
+| 2 | Pad Runner | 简单 | 黄色跳板 |
+| 3 | Orb Drift | 普通 | 黄色跳环、连跳环 |
+| 4 | Upside Dune | 普通 | 重力门、蓝色跳环 |
+| 5 | Base Breaker | 困难 | 三连刺、蓝色跳板、重力翻转 |
+| 6 | Final Pulse | 困难 | 综合:连跳环、重力切换、窄飞船通道 |
 
 每关约 90 秒,障碍按各曲节拍编排。主机上的求解器证明每关都能通关,并测量每次起跳的容错窗口:
 简单关最窄 141 ms,普通关最窄 54 ms,困难关最窄 58 ms(中位数 150–250 ms)。
@@ -52,19 +52,19 @@
 - **设置**:音乐音量(10 档)、音效开关、进度条显示、屏幕亮度(3 档)、音画偏移(±100 ms)、清除存档
   (按住确定 1.5 秒)、关于。
 
-## 音乐与版权
+## 原创配乐
 
-背景音乐来自你本地 `BGM/` 目录里的原曲。**原曲及转码后的音乐包都不进 git**,
-带音乐的固件只供你自己的设备使用,请勿上传或分发(包括 `build/firmware/` 调试归档)。
+6 首配乐全部原创:`tools/gd_music_synth.py` 按 [`assets/levels/tracks.json`](assets/levels/tracks.json) 的参数
+(BPM 与首拍和关卡一致,外加调式、和弦进行、音色与随机种子)作曲合成,有电子鼓组、贝斯、主旋律、琶音与铺底和弦,
+按"前奏、主歌、高潮、间奏"编排。死亡、通关、检查点与菜单音效在设备上实时合成。
 
 ```bash
 python3 tools/gen_gd_music.py
 ```
 
-它按 [`assets/levels/tracks.json`](assets/levels/tracks.json) 找到前 6 首原曲,截取 95 秒(末尾 3 秒淡出),
-转成 16 kHz 单声道 IMA-ADPCM,写出 `build/gd_music/gd_music.bin`(约 4.58 MB,占 music 分区 73%)。
-需要 ffmpeg(在 `PATH` 中,或用 `FFMPEG=/path/to/ffmpeg` 指定)。随后构建固件时,音乐包会自动写入
-`music` 分区并并入合并镜像;没有音乐包时照常构建,游戏以静音模式运行,选关卡片会提示"未内置音乐"。
+需要 numpy。它把 6 首曲子编码成 16 kHz 单声道 IMA-ADPCM,写出 `build/gd_music/gd_music.bin`(约 4.58 MB,
+占 music 分区 73%);加 `--wav-dir <目录>` 可同时导出 WAV 试听。随后构建固件时,音乐包会自动写入 `music` 分区
+并并入合并镜像;没有音乐包时照常构建,游戏以静音模式运行,选关卡片会提示"未内置音乐"。
 
 ## 构建、测试与烧录
 
@@ -83,9 +83,6 @@ python -m esptool --chip esp32c3 -p <端口> -b 460800 write-flash 0x0 build/Fol
 
 分区布局:`factory` 应用 2 MB(`0x10000`),`music` 数据分区约 5.94 MB(`0x210000`)。
 合并烧录会覆盖 NVS,已存进度与设置会被重置,详见 [烧录与数据说明](docs/development/engineering/firmware-layout.zh_CN.md#烧录与已存数据)。
-
-> 当前目录根部的 `Geometry Dash 音乐链接.md` 会让 `tools/check_repo.py` 报"根目录 Markdown"错误
-> (检查直接扫描根目录,不看 git 忽略规则)。把它移到 `BGM/` 里即可让完整门禁在本目录通过。
 
 ## 开发辅助
 
@@ -123,5 +120,6 @@ python -m esptool --chip esp32c3 -p <端口> -b 460800 write-flash 0x0 build/Fol
 - 主机预览:6 关自动通关;局部刷新与整屏重画 0 像素差异;LVGL 内存池峰值约 9 KB / 40 KB;
   游戏中平均每帧只需推送约 33% 的屏幕像素。
 - 真机测试:2026-10-07 开发者烧录交付的合并固件(SHA-256 `b2094002…be6437`)后在设备上完成测试,结果通过。
+- 换成原创配乐后的固件(只改了音乐包、关卡名与"关于"文案)尚未重新上机试听。
 - 仍未覆盖:测试为整体验收,帧率、内存与音频欠载的串口 `perf` 数据未逐项记录;侧键朝下的横屏方向
   (`BSP_LVGL_LANDSCAPE_KEYS_BOTTOM`)本应用未使用,未经实机验证。

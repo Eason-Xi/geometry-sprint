@@ -1,6 +1,6 @@
-; 几何冲刺关卡 4:Dry Out(原创布局,按节拍编排)
-name: Dry Out
-artist: DJVI
+; 几何冲刺关卡 4:Upside Dune(原创布局,按节拍编排)
+name: Upside Dune
+artist: Original Score
 difficulty: normal
 theme: 3
 track: 4

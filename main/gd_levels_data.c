@@ -865,8 +865,8 @@ static const gd_obj_t L6[] = {
 
 const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
     {
-        .name = "Stereo Madness",
-        .artist = "ForeverBound",
+        .name = "Neon Takeoff",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_EASY,
         .theme = 0,
         .track = 1,
@@ -877,8 +877,8 @@ const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
         .objs = L1,
     },
     {
-        .name = "Back On Track",
-        .artist = "DJVI",
+        .name = "Pad Runner",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_EASY,
         .theme = 1,
         .track = 2,
@@ -889,8 +889,8 @@ const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
         .objs = L2,
     },
     {
-        .name = "Polargeist",
-        .artist = "Step",
+        .name = "Orb Drift",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_NORMAL,
         .theme = 2,
         .track = 3,
@@ -901,8 +901,8 @@ const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
         .objs = L3,
     },
     {
-        .name = "Dry Out",
-        .artist = "DJVI",
+        .name = "Upside Dune",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_NORMAL,
         .theme = 3,
         .track = 4,
@@ -913,8 +913,8 @@ const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
         .objs = L4,
     },
     {
-        .name = "Base After Base",
-        .artist = "DJVI",
+        .name = "Base Breaker",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_HARD,
         .theme = 4,
         .track = 5,
@@ -925,8 +925,8 @@ const gd_level_t GD_LEVELS[GD_LEVEL_COUNT] = {
         .objs = L5,
     },
     {
-        .name = "Can't Let Go",
-        .artist = "DJVI",
+        .name = "Final Pulse",
+        .artist = "Original Score",
         .difficulty = GD_DIFF_HARD,
         .theme = 5,
         .track = 6,

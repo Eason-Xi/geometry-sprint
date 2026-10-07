@@ -7,7 +7,6 @@ import importlib.util
 import json
 import math
 import os
-import shutil
 import struct
 import subprocess
 import sys
@@ -147,53 +146,54 @@ class MusicToolTest(unittest.TestCase):
         crc = struct.unpack_from("<I", pack, 16)[0]
         self.assertEqual(crc, zlib.crc32(pack[:16] + b"\0" * 4 + pack[20:64]) & 0xFFFFFFFF)
 
-    def test_parse_ima_wav(self):
-        def wav(fact: int | None) -> bytes:
-            fmt = struct.pack("<HHIIHHHH", 0x11, 1, 16000, 8110, 1024, 4, 2, 2041)
-            chunks = b"fmt " + struct.pack("<I", len(fmt)) + fmt
-            if fact is not None:
-                chunks += b"fact" + struct.pack("<I", 4) + struct.pack("<I", fact)
-            data = bytes(1024 * 2 + 100)                     # 末尾半块会被丢弃
-            chunks += b"data" + struct.pack("<I", len(data)) + data
-            return b"RIFF" + struct.pack("<I", 4 + len(chunks)) + b"WAVE" + chunks
+    def test_encoder_round_trips_through_firmware_decoder(self):
+        rate = 16000
+        pcm = [int(9000 * math.sin(2 * math.pi * 330 * i / rate) + 4000 * math.sin(2 * math.pi * 1250 * i / rate)
+                   * math.sin(3 * i / rate)) for i in range(rate * 2)]
+        data = music.encode_ima(pcm, 1024)
+        self.assertEqual(len(data) % 1024, 0)
+        tmp = Path(self.tmp.name)
+        pack_path = tmp / "tone.bin"
+        pack_path.write_bytes(music.build_pack([music.Track(1, rate, 1024, len(pcm), data)]))
+        decoded = tmp / "dec.raw"
+        subprocess.run([str(self.dump), str(pack_path), "1", str(decoded)], check=True, capture_output=True)
+        dec = struct.unpack(f"<{len(pcm)}h", decoded.read_bytes()[:len(pcm) * 2])
+        sig = sum(x * x for x in pcm)
+        err = sum((a - b) ** 2 for a, b in zip(pcm, dec))
+        self.assertGreater(10 * math.log10(sig / max(err, 1)), 25.0)
+        self.assertEqual(dec[0], pcm[0])
 
-        self.assertEqual(music.parse_ima_wav(wav(3000))[2], 3000)
-        rate, align, samples, data = music.parse_ima_wav(wav(None), 4000)
-        self.assertEqual((rate, align, samples, len(data)), (16000, 1024, 4000, 2048))
-        self.assertEqual(music.parse_ima_wav(wav(None))[2], 2 * 2041)
-        with self.assertRaises(ValueError):
-            music.parse_ima_wav(b"RIFF\0\0\0\0WAVEjunk")
-
-    def test_tracks_cover_levels_and_fit_partition(self):
-        cfg = json.loads(music.TRACKS_JSON.read_text(encoding="utf-8"))
+    def test_tracks_match_levels_and_fit_partition(self):
+        cfg = music.load_config()
         parsed = levels.load_levels()
         self.assertEqual(sorted(t["track"] for t in cfg["tracks"]), [int(lv.header["track"]) for lv in parsed])
         for t in cfg["tracks"]:
             lv = parsed[t["track"] - 1]
+            # 曲名即关卡名;BPM 与首拍必须和关卡一致(障碍按这些拍点编排)
+            self.assertEqual(t["title"], lv.header["name"])
+            self.assertEqual(float(t["bpm"]), float(lv.header["bpm"]))
+            self.assertEqual(int(t["first_beat_ms"]), int(lv.header["first_beat_ms"]))
             # 音乐要比关卡长:通关后还有 1.5 s 的完成动画,淡出不能早于终点
-            self.assertGreaterEqual(t["cut_s"] - t["fade_s"], levels.finish_seconds(lv) + 1.5, lv.header["name"])
-        # 按 ADPCM 约 8 KB/s 估算,全部曲目放得进 music 分区
-        estimate = sum(math.ceil(t["cut_s"] * cfg["sample_rate"] / music.samples_per_block(cfg["block_align"]))
+            self.assertGreaterEqual(t["length_s"] - t["fade_s"], levels.finish_seconds(lv) + 1.5, lv.header["name"])
+        estimate = sum(math.ceil(t["length_s"] * cfg["sample_rate"] / music.samples_per_block(cfg["block_align"]))
                        * cfg["block_align"] for t in cfg["tracks"])
         self.assertLess(estimate + 1024, music.music_partition_size())
 
-    @unittest.skipUnless(os.environ.get("FFMPEG") or shutil.which("ffmpeg"), "ffmpeg not installed")
-    def test_decoder_matches_ffmpeg(self):
-        ffmpeg = os.environ.get("FFMPEG") or shutil.which("ffmpeg")
-        tmp = Path(self.tmp.name)
-        src = tmp / "tone.wav"
-        subprocess.run([ffmpeg, "-v", "error", "-y", "-f", "lavfi", "-i",
-                        "aevalsrc=0.4*sin(2*PI*330*t)+0.2*sin(2*PI*1250*t)*sin(3*t):s=16000:d=3",
-                        "-ac", "1", "-c:a", "adpcm_ima_wav", "-block_size", "1024", str(src)], check=True)
-        reference = tmp / "ref.raw"
-        subprocess.run([ffmpeg, "-v", "error", "-y", "-i", str(src), "-f", "s16le", str(reference)], check=True)
-        rate, align, samples, data = music.parse_ima_wav(src.read_bytes())
-        pack_path = tmp / "tone.bin"
-        pack_path.write_bytes(music.build_pack([music.Track(1, rate, align, samples, data)]))
-        decoded = tmp / "dec.raw"
-        subprocess.run([str(self.dump), str(pack_path), "1", str(decoded)], check=True, capture_output=True)
-        ref = reference.read_bytes()
-        self.assertEqual(decoded.read_bytes()[:len(ref)], ref[:samples * 2])
+    @unittest.skipUnless(importlib.util.find_spec("numpy"), "numpy not installed")
+    def test_synth_is_deterministic_and_on_beat(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import numpy as np
+        import gd_music_synth as synth
+        spec = dict(music.load_config()["tracks"][0], length_s=8, fade_s=1)
+        a = synth.render_track(spec, 16000)
+        b = synth.render_track(spec, 16000)
+        self.assertTrue(np.array_equal(a, b))
+        self.assertEqual(len(a), 8 * 16000)
+        self.assertLess(int(np.max(np.abs(a.astype(np.int32)))), 32767)
+        # 第一拍之前静音,第一拍上有底鼓
+        first = int(spec["first_beat_ms"] * 16)
+        self.assertLess(float(np.abs(a[:first - 80]).max()), 50.0)
+        self.assertGreater(float(np.abs(a[first:first + 800]).max()), 3000.0)
 
 
 if __name__ == "__main__":

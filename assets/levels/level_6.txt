@@ -1,6 +1,6 @@
-; 几何冲刺关卡 6:Can't Let Go(原创布局,按节拍编排)
-name: Can't Let Go
-artist: DJVI
+; 几何冲刺关卡 6:Final Pulse(原创布局,按节拍编排)
+name: Final Pulse
+artist: Original Score
 difficulty: hard
 theme: 5
 track: 6

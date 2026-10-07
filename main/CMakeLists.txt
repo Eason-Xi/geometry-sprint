@@ -17,7 +17,7 @@ if(DEFINED ENV{GD_AUTOPLAY})
     target_compile_definitions(${COMPONENT_LIB} PRIVATE GD_AUTOPLAY=$ENV{GD_AUTOPLAY})
 endif()
 
-# 音乐包(tools/gen_gd_music.py 从本地 BGM 生成;原曲有版权,音乐包不进 git)。
+# 音乐包(tools/gen_gd_music.py 把原创配乐合成并编码;生成物在 build/ 下,不进 git)。
 # 存在时复制进构建目录、注册到 "music" 分区,idf.py merge-bin 会把它并入合并镜像;
 # 不存在时照常构建,固件以静音模式运行。可用环境变量 GD_MUSIC_PACK 指定其他路径。
 set(GD_MUSIC_SRC "${CMAKE_CURRENT_LIST_DIR}/../build/gd_music/gd_music.bin")

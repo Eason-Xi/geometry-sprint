@@ -95,8 +95,8 @@
 #define S_OFFSET_HELP       "画面比音乐慢就调大"
 #define S_ABOUT_TITLE       "关于"
 #define S_ABOUT_1           "几何冲刺 · 非官方致敬作品"
-#define S_ABOUT_2           "关卡与画面为原创,音乐版权归原作者"
-#define S_ABOUT_3           "仅供个人设备使用,请勿分发固件"
+#define S_ABOUT_2           "关卡、画面与配乐均为原创"
+#define S_ABOUT_3           "配乐由程序作曲合成,随固件分发"
 #define S_ABOUT_4           "Geometry Dash 是 RobTop Games 的商标"
 
 // —— 统计 ——

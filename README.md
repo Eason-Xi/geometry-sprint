@@ -38,12 +38,12 @@ Small labels at the top of every menu page line up with the physical keys; they 
 
 | # | Level (track) | Difficulty | New mechanic |
 | --- | --- | --- | --- |
-| 1 | Stereo Madness | Easy | Cube jumps, platforms, the first ship section |
-| 2 | Back On Track | Easy | Yellow jump pads |
-| 3 | Polargeist | Normal | Yellow jump orbs, orb chains |
-| 4 | Dry Out | Normal | Gravity portals, blue jump orbs |
-| 5 | Base After Base | Hard | Triple spikes, blue jump pads, gravity flips |
-| 6 | Can't Let Go | Hard | Combined: orb chains, gravity switches, narrow ship corridors |
+| 1 | Neon Takeoff | Easy | Cube jumps, platforms, the first ship section |
+| 2 | Pad Runner | Easy | Yellow jump pads |
+| 3 | Orb Drift | Normal | Yellow jump orbs, orb chains |
+| 4 | Upside Dune | Normal | Gravity portals, blue jump orbs |
+| 5 | Base Breaker | Hard | Triple spikes, blue jump pads, gravity flips |
+| 6 | Final Pulse | Hard | Combined: orb chains, gravity switches, narrow ship corridors |
 
 Each level lasts about 90 seconds, with obstacles choreographed to its track's beat. A host solver proves every
 level can be completed and measures the timing window of every jump: the narrowest is 141 ms on easy, 54 ms on
@@ -57,21 +57,21 @@ normal, and 58 ms on hard levels (medians 150–250 ms).
 - **Settings**: music volume (10 levels), sound effects, progress bar, screen brightness (3 levels), audio offset
   (±100 ms), clear save data (hold OK for 1.5 seconds), and About.
 
-## Music and copyright
+## Original soundtrack
 
-The background music comes from the original tracks in your local `BGM/` directory. **Neither the original tracks
-nor the transcoded music pack are committed to git.** Firmware that contains music is for your own device only;
-do not upload or share it (this includes the `build/firmware/` debug archive).
+All six pieces are original: `tools/gd_music_synth.py` composes and synthesizes them from the parameters in
+[`assets/levels/tracks.json`](assets/levels/tracks.json) (BPM and first beat match each level, plus mode, chord
+progression, timbre, and random seed), with electronic drums, bass, lead melody, arpeggios, and pads arranged as
+intro, verse, drop, and break. Death, completion, checkpoint, and menu sounds are synthesized on the device.
 
 ```bash
 python3 tools/gen_gd_music.py
 ```
 
-Using [`assets/levels/tracks.json`](assets/levels/tracks.json), it finds the first six tracks, cuts each to 95
-seconds with a 3 second fade-out, converts them to 16 kHz mono IMA-ADPCM, and writes
-`build/gd_music/gd_music.bin` (about 4.58 MB, 73% of the music partition). It needs ffmpeg on `PATH` or
-`FFMPEG=/path/to/ffmpeg`. The next firmware build writes the pack to the `music` partition and merges it into the
-full image; without a pack the build still succeeds, the game runs silently, and level cards show a no-music notice.
+It needs numpy. It encodes the six pieces as 16 kHz mono IMA-ADPCM in `build/gd_music/gd_music.bin` (about 4.58 MB,
+73% of the music partition); add `--wav-dir <dir>` to also export WAV files for listening. The next firmware build
+writes the pack to the `music` partition and merges it into the full image; without a pack the build still succeeds,
+the game runs silently, and level cards show a no-music notice.
 
 ## Build, test, and flash
 
@@ -92,10 +92,6 @@ python -m esptool --chip esp32c3 -p <port> -b 460800 write-flash 0x0 build/FoloT
 Partition layout: the `factory` app has 2 MB (`0x10000`) and the `music` data partition about 5.94 MB
 (`0x210000`). A merged flash overwrites NVS and resets saved progress and settings; see the
 [flashing and data notes](docs/development/engineering/firmware-layout.md#flashing-and-stored-data).
-
-> The Markdown file in the root of this working folder (the local music link list) makes `tools/check_repo.py`
-> report a root Markdown error, because the check scans the root directly regardless of git ignore rules. Move it
-> into `BGM/` and the complete gate passes in this folder.
 
 ## Development aids
 
@@ -135,6 +131,8 @@ pages stay in the repository for host tests but are not built into the firmware.
   LVGL pool peak about 9 KB of 40 KB; gameplay pushes about 33% of the screen's pixels per frame on average.
 - Device test: on 2026-10-07 the developer flashed the delivered merged image (SHA-256 `b2094002…be6437`) and
   tested it on the device; the result passed.
+- The firmware with the original soundtrack (only the music pack, level names, and About text changed) has not
+  been listened to on the device yet.
 - Still not covered: the device test was an overall acceptance, so the serial `perf` figures (frame rate, memory,
   audio underruns) were not recorded item by item; the keys-at-bottom landscape orientation
   (`BSP_LVGL_LANDSCAPE_KEYS_BOTTOM`) is unused by this app and not verified on hardware.

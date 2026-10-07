@@ -4,8 +4,8 @@
 关卡源文件 assets/levels/level_<n>.txt(原创,随仓库提交)。格式:
 
     ; 注释行
-    name: Stereo Madness          头部:键值对,直到 "---"
-    artist: ForeverBound
+    name: Neon Takeoff            头部:键值对,直到 "---"
+    artist: Original Score
     difficulty: easy              easy / normal / hard
     theme: 0                      配色主题编号(main/gd_theme.h)
     track: 1                      音乐包曲目号

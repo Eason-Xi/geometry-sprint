@@ -1,6 +1,6 @@
 // main/gd_mpack.h —— 音乐包格式解析与 IMA-ADPCM 解码(纯 C,主机可测)。
 //
-// 音乐包由 tools/gen_gd_music.py 从本地 BGM 生成,烧录到 "music" 数据分区(PRD §8)。
+// 音乐包由 tools/gen_gd_music.py 把原创配乐合成并编码生成,烧录到 "music" 数据分区(PRD §8)。
 // 布局(小端):
 //   头部 32 字节:magic "GDMU" | u16 版本 | u16 曲目数 | u32 头部总长 | u32 包总长 |
 //                u32 头部 CRC32(计算时该字段按 0)| 12 字节保留

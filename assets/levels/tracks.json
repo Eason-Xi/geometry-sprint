@@ -1,14 +1,13 @@
 {
-  "comment": "几何冲刺音乐包曲目表:只含文件名匹配规则与截取参数,不含音频。原曲放在本地 BGM/ 目录(不进 git),由 tools/gen_gd_music.py 转码打包。",
+  "comment": "几何冲刺原创配乐:由 tools/gd_music_synth.py 按这些参数作曲合成,tools/gen_gd_music.py 打包成音乐包。bpm 与 first_beat_ms 必须和对应关卡头一致(障碍按这些拍点编排)。",
   "sample_rate": 16000,
   "block_align": 1024,
-  "volume": 0.85,
   "tracks": [
-    { "track": 1, "match": "Stereo Madness", "cut_s": 95, "fade_s": 3 },
-    { "track": 2, "match": "Back On Track", "cut_s": 95, "fade_s": 3 },
-    { "track": 3, "match": "Polargeist", "cut_s": 95, "fade_s": 3 },
-    { "track": 4, "match": "Dry Out", "cut_s": 95, "fade_s": 3 },
-    { "track": 5, "match": "Base After Base", "cut_s": 95, "fade_s": 3 },
-    { "track": 6, "match": "Can't Let Go", "cut_s": 95, "fade_s": 3 }
+    { "track": 1, "title": "Neon Takeoff", "bpm": 160.0, "first_beat_ms": 351, "key": "A", "mode": "minor", "progression": [0, 5, 2, 6], "lead": "pulse25", "seed": 101, "length_s": 95, "fade_s": 3 },
+    { "track": 2, "title": "Pad Runner", "bpm": 142.0, "first_beat_ms": 346, "key": "C", "mode": "major", "progression": [0, 4, 5, 3], "lead": "square", "seed": 202, "length_s": 95, "fade_s": 3 },
+    { "track": 3, "title": "Orb Drift", "bpm": 155.0, "first_beat_ms": 63, "key": "E", "mode": "minor", "progression": [0, 3, 5, 4], "lead": "pulse25", "seed": 303, "length_s": 95, "fade_s": 3 },
+    { "track": 4, "title": "Upside Dune", "bpm": 145.0, "first_beat_ms": 245, "key": "D", "mode": "dorian", "progression": [0, 6, 3, 4], "lead": "saw", "seed": 404, "length_s": 95, "fade_s": 3 },
+    { "track": 5, "title": "Base Breaker", "bpm": 141.0, "first_beat_ms": 428, "key": "F#", "mode": "minor", "progression": [0, 5, 6, 4], "lead": "square", "seed": 505, "length_s": 95, "fade_s": 3 },
+    { "track": 6, "title": "Final Pulse", "bpm": 170.0, "first_beat_ms": 216, "key": "G", "mode": "minor", "progression": [5, 6, 0, 0], "lead": "pulse25", "seed": 606, "length_s": 95, "fade_s": 3 }
   ]
 }

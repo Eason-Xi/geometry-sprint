@@ -55,11 +55,11 @@ Store reusable music and sound-effect sources in `music/`.
 - Check Flash and internal-RAM cost before embedding audio; stream or chunk long recordings.
 - Do not commit media without redistribution permission.
 
-Geometry Sprint's background music is the original tracks in the user's local `BGM/` directory (copyright of the
-original artists and RobTop Games) and is **never committed**: `tools/gen_gd_music.py` uses the match rules in
-`levels/tracks.json` to transcode them to 16 kHz mono IMA-ADPCM in the ignored `build/gd_music/gd_music.bin`, which
-the build merges into the `music` partition of the full image. Firmware with music is for personal devices only and
-must not be distributed. Sound effects are synthesized at runtime by `main/gd_sfx.c` and take no asset storage.
+Geometry Sprint's six soundtrack pieces are all original: `tools/gd_music_synth.py` composes and synthesizes them
+deterministically from the parameters in `levels/tracks.json`, and `tools/gen_gd_music.py` encodes them as 16 kHz mono
+IMA-ADPCM in the ignored `build/gd_music/gd_music.bin`, which the build merges into the `music` partition of the full
+image. The soundtrack ships with the firmware under the repository license. Sound effects are synthesized at runtime
+by `main/gd_sfx.c` and take no asset storage.
 
 ## Levels
 
@@ -67,5 +67,5 @@ must not be distributed. Sound effects are synthesized at runtime by `main/gd_sf
 track's beat, not copies of the official levels); the format is described in `tools/gen_gd_levels.py`.
 `tools/gen_gd_levels.py generate` compiles them into `main/gd_levels_data.c` and uses the host solver to produce the
 completion replays in `main/gd_replays_data.c`; SHA-256 hashes of the levels, physics sources, and generated files
-are recorded in `levels/levels.manifest.json`. `levels/tracks.json` contains only file-name match rules and cut
-parameters, no audio.
+are recorded in `levels/levels.manifest.json`. `levels/tracks.json` holds the composition parameters of the six original
+pieces (title, BPM, first beat, mode, chord progression, timbre, seed), no audio.

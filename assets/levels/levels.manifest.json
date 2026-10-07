@@ -1,12 +1,12 @@
 {
   "generator": "tools/gen_gd_levels.py",
   "levels": {
-    "level_1.txt": "d49ed62ba178807e5640ea4eac158860edc3980b872d086d79e2372c3da98330",
-    "level_2.txt": "40e7ec7b3059a08b06b65a8cef75448f7633ff2d3d64039c4f994d4e856d002f",
-    "level_3.txt": "d31c070b76c4a56178bb01ae7447ba9ead5604b89f2caab35af188f3f43f3b5f",
-    "level_4.txt": "1dadc6ab2c5a522f95f5178812096856b48aefc7472f2b02244c59c83401886c",
-    "level_5.txt": "b8bc08d6f5bcdad3dad1359709e1eecb43d8cf588a07a6472ef436b244bb55f0",
-    "level_6.txt": "731853ac7595ca3322ece925bbda146810f3e8bf2931c6d4b9c92882eba752f6"
+    "level_1.txt": "7ac6ec5ac41dac91268e5aa9aea3a8f011194b62e2b8ac044ef3d05c0aa9f971",
+    "level_2.txt": "679ec76b76a365338ef30ad72936b4687eaa845473e923d96509bfc15215feca",
+    "level_3.txt": "a556ffa05f1a9ccb0c6e69d74a9724eaad27de04c00daaebc71b1ab177f4db04",
+    "level_4.txt": "02dc9f1689277e3ee2ba77f4477ad769f4466b4b3fb1d51bfa01264bbfd9a8d1",
+    "level_5.txt": "ce3b3ebf551a918ca8b86bfe15d4a1d22f98a9f40d4a89ef2dbca5ec501be166",
+    "level_6.txt": "d328d37a4fb9c9bbb506a01588d965037f0478ada2b663746f5b2128eecf0bf3"
   },
   "physics_sources": [
     "main/gd_level.h",
@@ -19,6 +19,6 @@
     "tests/gd_bot_main.c"
   ],
   "physics_sha256": "3e7aec53e71b447caf6112d232f3f126289e4999061724c6ca9bdd904f2295a0",
-  "levels_data_sha256": "509cebf39801b50defbe124ea33a1242422ca9743d191404398377b7346f448b",
+  "levels_data_sha256": "9199c4f6a9f787e0dd77ceaadca79bc7c0efab4e41d2a3a6c6e9d23b902ca850",
   "replays_data_sha256": "0ffad321edd6475ed71d8d2b3fa8ecc8b98fea0ec2111860228e7a0f371bf332"
 }

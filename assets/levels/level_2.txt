@@ -1,6 +1,6 @@
-; 几何冲刺关卡 2:Back On Track(原创布局,按节拍编排)
-name: Back On Track
-artist: DJVI
+; 几何冲刺关卡 2:Pad Runner(原创布局,按节拍编排)
+name: Pad Runner
+artist: Original Score
 difficulty: easy
 theme: 1
 track: 2

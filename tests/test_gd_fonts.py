@@ -42,7 +42,7 @@ class CharsetTest(unittest.TestCase):
     def test_charset_contains_core_ui_text(self):
         chars = {chr(p) for p in gen.text_charset()}
         for text in ("选择关卡", "第 1 次尝试", "练习模式:开", "新纪录", "按住 确定 1.5 秒", "未内置音乐(静音游玩)",
-                     "◀", "▶", "★", "◆", "…", "·", "Stereo Madness"):
+                     "◀", "▶", "★", "◆", "…", "·", "Neon Takeoff"):
             self.assertTrue(set(text) <= chars, text)
 
     def test_glyph_header_matches(self):

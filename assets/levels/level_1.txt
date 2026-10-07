@@ -1,6 +1,6 @@
-; 几何冲刺关卡 1:Stereo Madness(原创布局,按节拍编排)
-name: Stereo Madness
-artist: ForeverBound
+; 几何冲刺关卡 1:Neon Takeoff(原创布局,按节拍编排)
+name: Neon Takeoff
+artist: Original Score
 difficulty: easy
 theme: 0
 track: 1

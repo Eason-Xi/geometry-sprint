@@ -53,14 +53,13 @@
 - 嵌入音频前评估 Flash 与内部 RAM 成本；长录音应流式或分块。
 - 无再分发许可不提交媒体文件。
 
-几何冲刺的背景音乐是用户本地 `BGM/` 目录中的原曲(版权归原作者与 RobTop Games),**不提交到仓库**:
-`tools/gen_gd_music.py` 按 `levels/tracks.json` 的匹配规则转码为 16 kHz、单声道 IMA-ADPCM,写到已被忽略的
-`build/gd_music/gd_music.bin`,构建时并入合并镜像的 `music` 分区。带音乐的固件仅供个人设备使用,不得分发。
-音效由 `main/gd_sfx.c` 实时合成,不占素材存储。
+几何冲刺的 6 首配乐全部原创:由 `tools/gd_music_synth.py` 按 `levels/tracks.json` 的参数作曲合成(确定性),
+`tools/gen_gd_music.py` 编码为 16 kHz、单声道 IMA-ADPCM,写到已被忽略的 `build/gd_music/gd_music.bin`,构建时并入
+合并镜像的 `music` 分区。配乐与仓库同许可证随固件分发。音效由 `main/gd_sfx.c` 实时合成,不占素材存储。
 
 ## 关卡(levels)
 
 `levels/level_1.txt` … `levels/level_6.txt` 是几何冲刺的 6 个原创关卡(按各曲节拍编排,不复刻官方关卡),
 格式见 `tools/gen_gd_levels.py`。`tools/gen_gd_levels.py generate` 把它们编译为 `main/gd_levels_data.c`,并用主机
 求解器生成通关录像 `main/gd_replays_data.c`;关卡、物理源码与生成物的 SHA-256 记录在 `levels/levels.manifest.json`。
-`levels/tracks.json` 只包含曲目文件名的匹配规则与截取参数,不含任何音频。
+`levels/tracks.json` 是 6 首原创配乐的作曲参数(曲名、BPM、首拍、调式、和弦进行、音色、种子),不含音频。

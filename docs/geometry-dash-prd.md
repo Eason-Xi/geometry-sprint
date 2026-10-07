@@ -6,11 +6,11 @@
 
 | Item | Content |
 | --- | --- |
-| Application | Geometry Sprint: an offline, single-player, personal-use side-scrolling rhythm runner that pays tribute to *Geometry Dash* |
+| Application | Geometry Sprint: an offline, single-player side-scrolling rhythm runner that pays tribute to *Geometry Dash* |
 | Target device | FoloToy AI Passport: ESP32-C3, 8 MB Flash, no PSRAM, ST7789P3 240×320, three-button ADC, ES8311 audio |
 | Branch | `feature/geometry-dash` (from `main` `0b9e4c8`) |
 | Status | Implemented per this document on 2026-10-07 (M0–M3 and most P1 items); host tests, firmware build, and device test all pass; see §16 for the implementation record and deviations |
-| Confirmed decisions | Landscape 320×240 with side keys on top; cube + ship + jump pads/orbs + gravity flip; background music from the first 6 local original tracks |
+| Confirmed decisions | Landscape 320×240 with side keys on top; cube + ship + jump pads/orbs + gravity flip; six original soundtrack pieces (the first draft used local original tracks; replaced for publishing, see §2) |
 
 This document is the requirements and acceptance basis for the application. Implementation follows
 [`AGENTS.md`](../AGENTS.md), the [AI development guide](development/ai-guide.md), and the
@@ -32,7 +32,7 @@ Death restarts instantly until the level reaches 100%.
 ### 1.2 Goals
 
 - **G1 Feel first**: jump timing lines up with the beat, input responds on press, and a retry starts within 1 s of failure.
-- **G2 Original music**: one original track per level, scrolling strictly synchronized with the music, with dropped frames never affecting judgment.
+- **G2 Music**: one original soundtrack piece per level, scrolling strictly synchronized with the music, with dropped frames never affecting judgment.
 - **G3 Lasting challenge**: 6 levels of increasing difficulty, each introducing a new mechanic, plus a practice mode and progress records.
 - **G4 Stable and verifiable**: the core gameplay is portable C tested on the host; a bot solver proves every level can be completed; performance, memory, and audio metrics are measurable on the device.
 
@@ -44,20 +44,17 @@ Wi-Fi / BLE features, and deep sleep.
 
 ## 2. Copyright and compliance (P0)
 
-- Background music comes from the original tracks in the user's local `BGM/` directory. Copyright belongs
-  to the original artists (ForeverBound, DJVI, Step, and others) and RobTop Games. **The original files,
-  the transcoded music pack, and any derived audio must never be committed to git.** `BGM/` is listed
-  in the local `.git/info/exclude`, and the generated pack lives under the already ignored `build/`.
-- A merged firmware image that contains music is for the owner's personal device only. It must not be
-  uploaded to a public repository, release, or file share, and must not be published through
-  `folotoy-ai-passport-publisher`. The `build/firmware/<sha256>/` debug archive also contains the music;
-  confirm before sharing it.
-- Level layouts are original designs choreographed to each track's beat, not grid-for-grid copies of
-  RobTop's official levels. Characters, icons, and the interface are original artwork.
-- "Geometry Dash" is a trademark of RobTop Games. The app uses only its Chinese title and states on the
-  About page that it is an unofficial tribute.
-- Fonts use Source Han Sans SC (SIL OFL 1.1). Record font and level asset sources and licenses in
-  `assets/README.md`; for music, record only "local private asset, not distributed with the repository".
+- The soundtrack is entirely original: `tools/gd_music_synth.py` composes and synthesizes it from the parameters in
+  `assets/levels/tracks.json`, and it ships with the repository and the firmware. The first draft used the original
+  *Geometry Dash* tracks from the user's local `BGM/`; to allow public publishing, they were replaced with the original
+  soundtrack on 2026-10-07. The original tracks never enter git or the firmware; `BGM/` stays local and is listed in
+  `.git/info/exclude`.
+- Level and track names are original (Neon Takeoff and so on) and do not reuse the original song titles; level layouts
+  are original designs, not grid-for-grid copies of the official levels; characters, icons, and the interface are original artwork.
+- "Geometry Dash" is a trademark of RobTop Games. The app uses only its Chinese title and states on the About page that
+  it is an unofficial tribute.
+- Fonts use Source Han Sans SC (SIL OFL 1.1). Record the sources and licenses of fonts, levels, and the soundtrack in
+  `assets/README.md`.
 
 ## 3. Hardware and BSP prerequisites
 
@@ -172,18 +169,17 @@ Power on -> Title --right--> Level select --right--> Gameplay --middle--> Pause 
 Each level is designed to last 85–95 s. Music is cut from the start of the track to the end of the level
 plus a 3 s fade-out; each track in the music pack is at most 95 s.
 
-| # | Level (track) | Artist | Track length | Estimated BPM | Estimated first beat | Difficulty | New mechanic | Theme (background / ground) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Stereo Madness | ForeverBound | 197.5 s | 160 | 351 ms | Easy | Cube jumps, block platforms, one ship section | Blue `#2563EB` / `#1E3A8A` |
-| 2 | Back On Track | DJVI | 181.0 s | 142 | 346 ms | Easy | Yellow jump pads | Purple `#9333EA` / `#4C1D95` |
-| 3 | Polargeist | Step | 112.0 s | 155 | 63 ms | Normal | Yellow jump orbs | Green `#16A34A` / `#14532D` |
-| 4 | Dry Out | DJVI | 163.3 s | 145 | 245 ms | Normal | Gravity portals, blue jump orbs | Orange `#EA580C` / `#7C2D12` |
-| 5 | Base After Base | DJVI | 190.0 s | 141 | 428 ms | Hard | Gravity flips inside ship sections, blue jump pads | Teal `#0891B2` / `#164E63` |
-| 6 | Can't Let Go | DJVI | 185.0 s | 170 | 216 ms | Hard | Combined: dense orb chains, gravity switches | Magenta `#DB2777` / `#831843` |
+| # | Level (track) | BPM | First beat | Difficulty | New mechanic | Theme |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Neon Takeoff | 160 | 351 ms | Easy | Cube jumps, block platforms, one ship section | Blue |
+| 2 | Pad Runner | 142 | 346 ms | Easy | Yellow jump pads | Purple |
+| 3 | Orb Drift | 155 | 63 ms | Normal | Yellow jump orbs | Green |
+| 4 | Upside Dune | 145 | 245 ms | Normal | Gravity portals, blue jump orbs | Orange |
+| 5 | Base Breaker | 141 | 428 ms | Hard | Gravity flips inside ship sections, blue jump pads | Teal |
+| 6 | Final Pulse | 170 | 216 ms | Hard | Combined: dense orb chains, gravity switches | Magenta |
 
-BPM and first beat were **estimated** from the first 95 s of each track with spectral flux plus a comb
-filter (2026-10-07); they are not authoritative. Before designing a level, calibrate them by ear against
-the level tool's beat ruler and write the result into the level header.
+BPM and first beat were first estimated from the draft's original tracks, and the levels were choreographed to them;
+the original soundtrack is composed at exactly the same BPM and first beat, so beats and obstacles stay aligned.
 
 ### 6.2 Level design rules
 
@@ -287,8 +283,7 @@ the level tool's beat ruler and write the result into the level header.
 - Format: **IMA-ADPCM 4-bit, 16 kHz, mono**. The decoder costs almost no Flash or CPU, and the block structure
   naturally supports practice-mode seeking. MP3 or Opus would compete with rendering for the single C3 core
   and add 30–80 KB of Flash, so this version does not use them.
-- Measured (2026-10-07, ffmpeg `adpcm_ima_wav`): each track cut to 95 s with a 3 s fade-out is 762,974 B
-  (about 8.0 KB/s); the 6 tracks total about 4.58 MB.
+- Measured (2026-10-07): each 95 s track (3 s fade-out) is 762,880 B (about 8.0 KB/s); the 6 tracks total about 4.58 MB.
 
 ### 8.2 Partition layout
 
@@ -305,18 +300,16 @@ and the project documentation must state the flashing instructions.
 
 ### 8.3 Music pack generation and build
 
-- Tool `tools/gen_gd_music.py` (P0):
-  - Reads the `BGM/` directory (overridable with `--bgm-dir` or the `GD_BGM_DIR` environment variable).
-    Using the committed track map `assets/levels/tracks.json` (file-name patterns, cut length, fade length,
-    BPM, and first beat only, no audio), it runs ffmpeg (from `FFMPEG` or `PATH`) and produces
-    `build/gd_music/gd_music.bin` plus a manifest (SHA-256, byte count, and sample count per track).
-  - When ffmpeg or a source track is missing, it reports a clear error and packs only the tracks it found.
+- Tool `tools/gen_gd_music.py` (P0, needs numpy): calls `tools/gd_music_synth.py` to compose and synthesize every
+  track from `assets/levels/tracks.json` (title, BPM, first beat, mode, chord progression, timbre, random seed, length,
+  and fade), encodes it as IMA-ADPCM (with the same reconstruction formula as the firmware decoder), and writes
+  `build/gd_music/gd_music.bin` plus a manifest; `--wav-dir` also saves WAV files for listening.
 - Music pack format (little endian): a header with magic `GDMU`, version, track count, and header CRC32;
   an index table with level number, sample rate, block alignment, samples per block, data offset, byte count,
   total samples, and data CRC32 per entry; then the IMA-ADPCM blocks.
 - CMake registers an existing music pack to the `music` partition with `esptool_py_flash_to_partition`, so the
   `merge-bin` step of `./tools/validate.sh` automatically includes it in `FoloToy-AI-Passport-full.bin`. When the
-  pack is missing, CMake only prints a warning and the build still succeeds (CI and environments without BGM can build).
+  pack is missing, CMake only prints a warning and the build still succeeds (CI and other environments without a generated pack can build; the firmware then runs silently).
 - During development, the app partition can be flashed alone without rewriting the roughly 4.6 MB of music every time.
 
 ### 8.4 Runtime
@@ -487,7 +480,7 @@ archive. A successful build is not device verification. Flashing requires the us
 | ADC key release latency | The ship feels "sticky" | Measure RELEASE latency; tune ship parameters to compensate if needed |
 | BPM estimation error | Obstacles off the strong beats | Calibrate by ear with the beat ruler; audio offset in settings |
 | Large level design effort | Schedule slips | Build level 1 end to end first; the solver checks completability automatically; review with long PNGs |
-| Copyright | Accidentally publishing firmware with the original music | Audio never enters git; delivery notes and the About page clearly state personal use only |
+| Copyright | Original tracks ending up in the firmware | The soundtrack is now original; `gen_gd_music.py` no longer reads `BGM/`; the About page states it is an unofficial tribute |
 | Key position table not confirmed on hardware | Key labels may be off by ±10 px | Check on the device in M0; adjust `BSP_BTN_EDGE_POS_TABLE` if needed |
 
 ## 16. Implementation record (2026-10-07)
@@ -497,7 +490,7 @@ archive. A successful build is not device verification. Flashing requires the us
 | Levels | Six levels of about 90 s each in `assets/levels/level_*.txt`; the solver clears all of them, and the replays trigger every orb (the route is forced) |
 | Timing windows (narrowest / median) | Easy 141–154 ms / 250 ms; normal 54 ms / 187 ms and 137 ms / 158 ms; hard 58 ms / 154–200 ms; all above the §6.2 minimums |
 | Physics | Jump height 41 px, airtime 420 ms; pad height 75 px; triple spikes clearable, quadruple not; 1- and 2-cell platforms reachable, 3 not |
-| Music pack | Six tracks × 95 s, 16 kHz IMA-ADPCM, 4,577,504 bytes (73% of the music partition); the C decoder matches ffmpeg byte for byte |
+| Music pack | Six original tracks × 95 s, 16 kHz IMA-ADPCM, 4,577,504 bytes (73% of the music partition); 23–25 dB SNR after encoding, detected BPM matches every level, no clipping |
 | Firmware | App 860,304 bytes (41% of the 2 MB partition); merged image with the music pack 6,740,192 bytes |
 | Host preview | Partial refresh differs from a full redraw by 0 pixels; LVGL pool peak about 9 KB of 40 KB; gameplay pushes about 33% of the screen's pixels per frame on average |
 
@@ -509,11 +502,13 @@ Deviations from the first draft:
 - The play area is a fixed 9 cells tall and the camera does not follow vertically (§7.1 updated).
 - The solver replays are "centered": each press moves to the middle of its feasible range, for auto-play and window statistics.
 - A host LVGL preview replaces the H5/Wasm preview (§12 updated).
+- The soundtrack changed from local original tracks to an original synthesized score and the levels got original names (§2, §6.1, §8 updated) so the game can be published.
 
 Device: on 2026-10-07 the developer flashed the delivered merged image (SHA-256 `b2094002…be6437`) and tested it on
 the device; the result passed. It was an overall acceptance: the §13.2 scenario table and the §9.2 frame rate, memory,
 and audio underrun figures were not recorded item by item; the keys-at-bottom landscape orientation is unused by
-this app and not verified on hardware.
+this app and not verified on hardware. The firmware with the original soundtrack (only the music pack, level names,
+and About text changed) has not been listened to on the device yet.
 
 ## Appendix A: Reference implementations
 

@@ -1,6 +1,6 @@
-; 几何冲刺关卡 3:Polargeist(原创布局,按节拍编排)
-name: Polargeist
-artist: Step
+; 几何冲刺关卡 3:Orb Drift(原创布局,按节拍编排)
+name: Orb Drift
+artist: Original Score
 difficulty: normal
 theme: 2
 track: 3
