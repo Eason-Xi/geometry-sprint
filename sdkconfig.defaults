@@ -25,20 +25,22 @@ CONFIG_LV_DEF_REFR_PERIOD=20
 CONFIG_LV_FONT_MONTSERRAT_14=y
 CONFIG_LV_FONT_MONTSERRAT_20=y
 # LVGL 内置 malloc 池大小(KB)。它是独立静态区、不与系统堆共享,配大了会白白占用 RAM。
-# 本 demo UI 简单,24KB 足够;若自建复杂界面出现绘制卡死/看门狗,调大此值。
-CONFIG_LV_MEM_SIZE_KILOBYTES=24
+# 几何冲刺的全部页面是一个自绘画布,对象极少;池主要用于每块刷新时的绘制任务。
+# 主机预览(tools/render_gd_preview.py,64 位指针,偏保守)测得峰值后取 40 KB 留余量。
+CONFIG_LV_MEM_SIZE_KILOBYTES=40
+# 不使用任何标准控件主题(页面全部自绘),省下主题占用的池内存。
+CONFIG_LV_USE_THEME_DEFAULT=n
 
 # --- 系统 ---
 CONFIG_FREERTOS_HZ=1000
 
-# --- Bluetooth LE / NimBLE ---
-# ESP32-C3 仅支持 BLE；示例只启用单连接 peripheral 所需的最小 host 配置。
-CONFIG_BT_ENABLED=y
-CONFIG_BT_NIMBLE_ENABLED=y
-CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
-CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
-CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
-CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
-CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
-CONFIG_BT_NIMBLE_HOST_BASED_PRIVACY=n
-CONFIG_BT_NIMBLE_NVS_PERSIST=n
+# --- 无线 ---
+# 几何冲刺是纯离线游戏,不使用 Wi-Fi/蓝牙;关闭蓝牙控制器以节省内部 RAM。
+# (基线的 BLE/Wi-Fi 演示页源码仍在仓库中供主机测试使用,但不编译进本固件。)
+CONFIG_BT_ENABLED=n
+
+# --- 性能与音频 ---
+# 物理、ADPCM 解码与 LVGL 软件渲染都在单核 CPU 上完成:用 -O2 而不是默认的 -Og。
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+# 存档写 Flash 时缓存被关闭,I2S 中断放 IRAM 才不会因此断流(见硬件指南 8.1)。
+CONFIG_I2S_ISR_IRAM_SAFE=y

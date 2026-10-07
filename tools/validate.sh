@@ -66,6 +66,33 @@ run_static_checks() {
             -o "${test_dir}/test_demo_${demo}_runtime"
         "${test_dir}/test_demo_${demo}_runtime"
     done
+    # 几何冲刺:纯逻辑模块(物理、会话、关卡可通关证明、音乐包与音效、存档与状态机、对局控制器)
+    # 的主机测试;关卡与字库生成物未过期、界面字面量约束、工具链与固件解析器互通。
+    local gd_core=(main/gd_sim.c main/gd_level.c)
+    local gd_data=(main/gd_levels_data.c main/gd_replays_data.c)
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_gd_sim.c "${gd_core[@]}" -o "${test_dir}/test_gd_sim"
+    "${test_dir}/test_gd_sim"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_gd_game.c main/gd_game.c "${gd_core[@]}" -o "${test_dir}/test_gd_game"
+    "${test_dir}/test_gd_game"
+    "${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -Imain -Itests \
+        tests/test_gd_levels.c tests/gd_solver.c "${gd_core[@]}" "${gd_data[@]}" -o "${test_dir}/test_gd_levels"
+    "${test_dir}/test_gd_levels"
+    "${CC:-cc}" -std=c11 -D_DEFAULT_SOURCE -Wall -Wextra -Werror -Imain \
+        tests/test_gd_audio.c main/gd_mpack.c main/gd_sfx.c -lm -o "${test_dir}/test_gd_audio"
+    "${test_dir}/test_gd_audio"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_gd_model.c main/gd_model.c main/gd_save.c main/gd_mpack.c -o "${test_dir}/test_gd_model"
+    "${test_dir}/test_gd_model"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_gd_play.c main/gd_play.c main/gd_game.c main/gd_model.c main/gd_save.c main/gd_mpack.c \
+        "${gd_core[@]}" "${gd_data[@]}" -o "${test_dir}/test_gd_play"
+    "${test_dir}/test_gd_play"
+    python3 tools/gen_gd_levels.py check
+    python3 tools/gen_gd_fonts.py check
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_gd_tools.py
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_gd_fonts.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_deep_sleep_contract.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_check_repo.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_verify_firmware.py

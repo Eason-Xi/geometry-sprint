@@ -1,4 +1,7 @@
 # Name,   Type, SubType, Offset,   Size,     Flags
+# 几何冲刺：应用 2 MB；其余约 5.94 MB 是音乐包数据分区（tools/gen_gd_music.py 生成，
+# 音乐包存在时由 main/CMakeLists.txt 注册进 flash_args 并合并进 full.bin）。
 nvs,      data, nvs,     0x9000,   0x6000,
 phy_init, data, phy,     0xf000,   0x1000,
-factory,  app,  factory, 0x10000,  0x7f0000,
+factory,  app,  factory, 0x10000,  0x200000,
+music,    data, 0x40,    0x210000, 0x5f0000,
