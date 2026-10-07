@@ -138,6 +138,7 @@ Wi-Fi、NimBLE 和 light/deep sleep 直接使用 ESP-IDF API，不属于板级 B
 - 当前 gap 为 `(0, 0)`，镜像 X/Y 都关闭。
 - 厂商 porch、power、gamma 初始化表在 `bsp_display.c`。它来自特定面板参考例程，**不是通用 ST7789 默认值**；换面板应取得对应供应商序列。
 - 不要手写 MADCTL(0x36) 与现有 mirror/rotation 配置竞争。LVGL 注册显示时还会重新设置旋转。
+- 横屏用 `bsp_lvgl_set_orientation()`:`BSP_LVGL_LANDSCAPE_KEYS_TOP`(逆时针转 90°,侧键在顶边)或 `BSP_LVGL_LANDSCAPE_KEYS_BOTTOM`(顺时针转 90°,侧键在底边),逻辑分辨率变为 320 × 240。旋转由 esp_lvgl_port 改写面板 MADCTL 完成,不占额外缓冲;两种握法对应的 LVGL 旋转值只在 `bsp_pins.h` 的 `BSP_LCD_ROTATION_KEYS_*` 定义,按 esp_lvgl_port 2.9.0 映射推导;`KEYS_TOP` 已于 2026-10-06 实机确认,`KEYS_BOTTOM` **尚待实机确认**(画面上下颠倒时互换两个值)。须在 `bsp_lvgl_init()` 之后、建页面之前调用;圆角遮罩自动按当前逻辑分辨率计算。
 
 ### 5.2 LVGL 内存和线程规则
 
@@ -170,6 +171,10 @@ LVGL 非线程安全：
 | OK | 约 595 mV | `[447, 1900)` mV |
 | 松开 | 约 3300 mV | 不属于任何按键窗口 |
 
+三个键位于竖屏正面看的右侧边,从上到下依次为 上 / 下 / 确定(用户 2026-10-06 确认)。
+`bsp_pins.h` 的 `BSP_BTN_EDGE_POS_TABLE` 给出各键中心对应的竖屏 y 坐标(按产品渲染图换算,±10 px,待实机确认),
+应用可据此把屏幕上的按键提示对准实体键。
+
 绝不能用约 45 kΩ 且离散性大的 ESP32-C3 内部上拉替代 10 kΩ 外部上拉，否则三个档位会挤在低电压区并受温漂影响。
 
 实现上的关键限制：
@@ -178,7 +183,7 @@ LVGL 非线程安全：
 - ADC 衰减为 `ADC_ATTEN_DB_12`，每轮轮询三个按键复用一次平均采样，半开窗口避免边界同时命中两个键。
 - 校准创建失败会中止初始化并回滚；读取或换算失败视为未按下，而不是把无效电压作为 0 mV 触发 UP。BSP 不使用依赖的 ADC 索引注册表，避免部分分配失败后遗留占用索引、阻止重试。
 - 回调来自 button 组件使用的共享 `esp_timer` 任务，只能入队或执行同等级的有界操作，不能阻塞、录音、播放或访问 UI。
-- 事件包括 PRESS、CLICK、DOUBLE、LONG。应用菜单主要消费 CLICK；页面中的 OK LONG 被全局拦截用于返回。
+- 事件包括 PRESS、CLICK、DOUBLE、LONG、RELEASE。RELEASE 在每次松开时触发，便于应用立即停止"按住连调"类操作。CLICK 要在松开约 180 ms 后才到达（组件需排除双击），对延迟敏感的输入应使用 PRESS。基线菜单主要消费 CLICK；页面中的 OK LONG 被全局拦截用于返回。
 - 按键判定时序由 BSP 显式下发（`BSP_BTN_SHORT_PRESS_MS` = 180 ms、`BSP_BTN_LONG_PRESS_MS` = 500 ms，见 `bsp_pins.h`），不依赖组件 Kconfig 默认的 180 / 1500 ms：三个小按键上按住 1.5 s 才触发长按偏迟钝。组件对 `BUTTON_LONG_PRESS_TIME_MS` 的 Kconfig 下限同样是 500 ms，更短的长按只能在代码里下发。
 
 重标阈值时，在 Button 页逐个长按按键记录稳定电压，采集多块板、不同电量和合理温度范围的数据，再把相邻分布之间留裕量设置为边界。不要只用理论分压值。
@@ -220,7 +225,7 @@ MCU 是 I2S master，ES8311 是 slave；I2S0 的 TX/RX 全双工通道共享 MCL
 - `no_dac_ref=true` 对单声道麦克风录音是必要的；改为 false 会让读入通道成为 DAC reference，表现为录音恒零。
 - 麦克风模拟输入增益当前为 30 dB；输出音量 API 为 0–100%。增益和音量不是同一个概念。
 - `bsp_audio_read/write` 是阻塞调用，不能放在按键回调或 LVGL 任务中。
-- I2S DMA 当前为 6 个 descriptor、每个 240 frame。更改 DMA 或 LVGL buffer 前必须联合评估内部 RAM。
+- I2S DMA 当前为 6 个 descriptor、每个 240 frame,由 `bsp_audio.h` 的 `BSP_AUDIO_DMA_DESC_NUM` / `BSP_AUDIO_DMA_FRAME_NUM` 唯一定义;需要声画同步的应用据此估算输出队列延迟(帧数不变,采样率越高延迟越短:16 kHz 为 90 ms,32 kHz 为 45 ms)。更改 DMA 或 LVGL buffer 前必须联合评估内部 RAM。
 - 调用 `bsp_audio_sleep()` 前必须停止所有 PCM 读写。该接口通过已打开的控制接口直接执行完整 ES8311 suspend 寄存器序列，不依赖 codec-device opened 标志，因此开机后从未播放也不需无声 open。它会回读 `0x00`、`0x01`、`0x0D`、`0x0E`、`0x12` 和 `0x45`，失败后等待 5 ms 重试一次完整序列，并即使音频从未打开也显式停止两条 I2S channel。
 - light sleep 返回后调用 `bsp_audio_wake()`，以休眠前格式重新打开 codec/I2S 通路。两个接口均为幂等操作；音频子系统不可用时视为无需暂停或恢复。deep sleep 唤醒会重启，改由正常 `bsp_audio_init()` 流程初始化。
 - REG0E 仍写入 `0xFF`，但回读只比较 bit6:0，掩码和预期值均为 `0x7F`。读到 `0x7F` 或 `0xFF` 都通过，bit7 读为零不应误判为 suspend 失败。其余五个寄存器继续逐字节完整校验。I2C 错误或参与校验的位不符，重试一次后仍返回失败：Low Power demo 取消 light sleep 并尝试恢复音频；deep sleep 则记录错误并继续终端关闭流程。
@@ -237,7 +242,7 @@ Audio demo 的工作任务在 PCM 分块之间检查取消状态，并在页面�
 
 将音调 demo 扩展为持续 BGM、界面刷新和 NVS 存档并行的应用时，按键后出现的杂音可能来自 PCM 供给中断，即使该按键没有播放音效。修改音效或音量之前，先分别检查以下两条路径：
 
-- **任务供给不及时：** 同时测量 PCM 最大供给间隔、重绘和保存耗时。6 个 DMA descriptor、每个 240 frame，在 16 kHz 且缓冲填满时最多容纳 `6 * 240 / 16000 = 90 ms`；实际剩余余量可能更小。按键回调和 LVGL 锁内不做阻塞操作，纯焦点移动不写 Flash，音频工作任务相对刷屏任务应有足够优先级。任务仍须阻塞或让出 CPU；不要忙循环，也不要未检查应用任务就照抄优先级数值。仍在有意义的状态变化时保存。
+- **任务供给不及时：** 同时测量 PCM 最大供给间隔、重绘和保存耗时。6 个 DMA descriptor、每个 240 frame（`bsp_audio.h` 中的 `BSP_AUDIO_DMA_DESC_NUM` × `BSP_AUDIO_DMA_FRAME_NUM`），在 16 kHz 且缓冲填满时最多容纳 `6 * 240 / 16000 = 90 ms`；实际剩余余量可能更小。按键回调和 LVGL 锁内不做阻塞操作，纯焦点移动不写 Flash，音频工作任务相对刷屏任务应有足够优先级。任务仍须阻塞或让出 CPU；不要忙循环，也不要未检查应用任务就照抄优先级数值。仍在有意义的状态变化时保存。
 - **Flash/cache 停顿：** Flash 写入或擦除可能关闭缓存，延后默认 I2S 中断。播放与保存并行时，启用 `CONFIG_I2S_ISR_IRAM_SAFE=y`，并核对生成的 `sdkconfig`（只改 defaults 不会覆盖已有配置）。注册的 I2S 回调及其调用链必须满足 IRAM 安全要求，访问的数据放在内部 DRAM；只给回调加 `IRAM_ATTR` 不够。回调中不要打印日志、分配内存或读取 Flash 素材。参见 [ESP-IDF 5.5.3 I2S IRAM 安全说明](https://docs.espressif.com/projects/esp-idf/en/v5.5.3/esp32c3/api-reference/peripherals/i2s.html#iram-safe)。
 
 中断放入 IRAM 并不能让位于 Flash 的音频生产任务持续运行，也不代表缓冲无限。应根据实测停顿和内部 RAM 预算准备排队的 PCM，或在安全的播放边界保存。在最终应用固件上，持续播放 BGM，反复切换选项并确认会实际写入 NVS 的操作，再验证保存和重新载入。对照供给间隔并实机试听：日志无告警或单独播放音调成功，都不能证明并发播放没有杂音。

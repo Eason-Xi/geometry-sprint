@@ -27,6 +27,17 @@
 // 若换屏后画面呈负片,把这里改成 0。
 #define BSP_LCD_INVERT_COLOR 1
 
+// 横屏旋转:取值为 LVGL 的 lv_display_rotation_t(1 = 90°,3 = 270°),由
+// bsp_lvgl_set_orientation() 交给 esp_lvgl_port 改写面板 MADCTL(MV+MX / MV+MY),
+// 不占额外缓冲与 CPU。三个侧键在竖屏正面看的右侧边(从上到下:上 / 下 / 确定)。
+//   KEYS_TOP    :设备逆时针转 90°,侧键在顶边、挂绳孔在左。
+//   KEYS_BOTTOM :设备顺时针转 90°,侧键在底边、挂绳孔在右。
+// 取值按 esp_lvgl_port 2.9.0 的 MADCTL 映射与 LVGL 软件旋转定义推导;KEYS_TOP 已于
+// 2026-10-06 实机确认(节拍小剧场),KEYS_BOTTOM 尚未实机验证。
+// ★ 若实机画面上下颠倒,把两个值互换即可(只改这里)。
+#define BSP_LCD_ROTATION_KEYS_TOP     3
+#define BSP_LCD_ROTATION_KEYS_BOTTOM  1
+
 // 背光 LEDC 参数
 #define BSP_BL_LEDC_TIMER    LEDC_TIMER_0
 #define BSP_BL_LEDC_MODE     LEDC_LOW_SPEED_MODE
@@ -53,6 +64,12 @@
 #define BSP_BTN_ADC_UNIT     ADC_UNIT_1
 #define BSP_BTN_ADC_CHANNEL  ADC_CHANNEL_0    // GPIO0
 #define BSP_BTN_COUNT        3
+
+// 三个侧键中心沿侧边的位置,用竖屏屏幕 y 坐标(px,0 = 屏幕上沿)表示,顺序同 bsp_btn_t
+// (上 / 下 / 确定)。应用据此把屏幕上的按键提示对准实体键:
+//   横屏侧键朝上时 x ≈ 该值;侧键朝下时 x ≈ (BSP_LCD_H - 1 - 该值)。
+// 来源:产品渲染图 assets/images/home.jpg 按屏幕高度比例换算(±10 px),待实机确认。
+#define BSP_BTN_EDGE_POS_TABLE  { 43, 164, 280 }
 
 // 按键判定时序(ms):由 BSP 显式下发给 button 组件,不依赖它的 Kconfig 默认值。
 // 短按判定窗口 180ms 与组件默认一致,写在这里是为了和应用手感放在一起调;

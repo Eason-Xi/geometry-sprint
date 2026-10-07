@@ -4,10 +4,19 @@
 #include <stdio.h>
 #include "../components/bsp/src/bsp_display_lvgl.c"
 
-static lv_display_t display;
+static lv_display_t display = { .hres = BSP_LCD_W, .vres = BSP_LCD_H };
 static int panel_present = 1, lock_depth, port_live, display_live, callback_live;
 static int fail_lock, fail_port, fail_display, fail_event, init_calls, unlocked_flushes;
 static int panel_token, io_token;
+static int rotation_calls;
+void lv_display_set_rotation(lv_display_t *disp, lv_display_rotation_t rotation) {
+    assert(disp == &display && lock_depth); // 旋转必须在 LVGL 锁内完成
+    const int portrait = rotation == LV_DISPLAY_ROTATION_0 || rotation == LV_DISPLAY_ROTATION_180;
+    disp->rotation = rotation;
+    disp->hres = portrait ? BSP_LCD_W : BSP_LCD_H;
+    disp->vres = portrait ? BSP_LCD_H : BSP_LCD_W;
+    ++rotation_calls;
+}
 esp_lcd_panel_handle_t bsp_display_panel(void) { return panel_present ? &panel_token : NULL; }
 esp_lcd_panel_io_handle_t bsp_display_io(void) { return &io_token; }
 esp_err_t lvgl_port_init(const lvgl_port_cfg_t *cfg) {
@@ -57,6 +66,7 @@ static void expect_failure(void) {
     assert(bsp_lvgl_init() == NULL);
     assert(!s_disp && !lock_depth && !display_live);
     assert(!bsp_lvgl_lock(0));
+    assert(bsp_lvgl_set_orientation(BSP_LVGL_LANDSCAPE_KEYS_TOP) == ESP_ERR_INVALID_STATE);
 }
 int main(void) {
     panel_present = 0; expect_failure(); panel_present = 1;
@@ -82,5 +92,30 @@ int main(void) {
     lv_event_t ev = { .target = &display, .area = &area };
     rounded_flush_event(&ev);
     assert(pixels[0] == 0 && pixels[BSP_LCD_W - 1] == 0 && pixels[BSP_LCD_W / 2] == 0xffff);
+
+    // 横屏:逻辑分辨率变为 320 × 240,遮罩按逻辑宽度只涂黑首行两端,不误伤中段。
+    assert(bsp_lvgl_set_orientation((bsp_lvgl_orientation_t)99) == ESP_ERR_INVALID_ARG);
+    assert(rotation_calls == 0);
+    assert(bsp_lvgl_set_orientation(BSP_LVGL_LANDSCAPE_KEYS_TOP) == ESP_OK);
+    assert(!lock_depth && rotation_calls == 1);
+    assert(display.rotation == (lv_display_rotation_t)BSP_LCD_ROTATION_KEYS_TOP);
+    assert(display.hres == BSP_LCD_H && display.vres == BSP_LCD_W);
+    uint16_t wide[BSP_LCD_H];
+    for (int x = 0; x < BSP_LCD_H; ++x) wide[x] = 0xffff;
+    display.buffer = (lv_draw_buf_t){ .data = (uint8_t *)wide, .header.stride = sizeof(wide) };
+    lv_area_t wide_row = { .x1 = 0, .y1 = 0, .x2 = BSP_LCD_H - 1, .y2 = 0 };
+    lv_event_t wide_ev = { .target = &display, .area = &wide_row };
+    rounded_flush_event(&wide_ev);
+    assert(wide[0] == 0 && wide[BSP_LCD_H - 1] == 0);
+    assert(wide[BSP_LCD_W] == 0xffff && wide[BSP_LCD_H / 2] == 0xffff);
+    // 中间行(竖屏时属于底部圆角区的 y=239)在横屏下是最后一行,应被遮罩两端。
+    for (int x = 0; x < BSP_LCD_H; ++x) wide[x] = 0xffff;
+    wide_row.y1 = wide_row.y2 = BSP_LCD_W - 1;
+    rounded_flush_event(&wide_ev);
+    assert(wide[0] == 0 && wide[BSP_LCD_H - 1] == 0 && wide[BSP_LCD_H / 2] == 0xffff);
+    assert(bsp_lvgl_set_orientation(BSP_LVGL_LANDSCAPE_KEYS_BOTTOM) == ESP_OK);
+    assert(display.rotation == (lv_display_rotation_t)BSP_LCD_ROTATION_KEYS_BOTTOM);
+    assert(bsp_lvgl_set_orientation(BSP_LVGL_PORTRAIT) == ESP_OK);
+    assert(display.hres == BSP_LCD_W && display.vres == BSP_LCD_H);
     puts("BSP LVGL initialization tests: PASS");
 }

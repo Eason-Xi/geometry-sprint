@@ -9,7 +9,7 @@ static struct button_dev_t buttons[BSP_BTN_COUNT];
 static int adc_token, cal_token, adc_live, cal_live, live_buttons;
 static int create_calls, callback_calls, fail_create, fail_callback;
 static int fail_adc, fail_channel, fail_cal, fail_read, fail_convert, fail_delete;
-static int raw_mv, reads, events;
+static int raw_mv, reads, events, releases;
 static int64_t clock_us;
 
 esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *cfg, adc_oneshot_unit_handle_t *h) {
@@ -73,7 +73,13 @@ esp_err_t iot_button_register_cb(button_handle_t h, button_event_t ev, button_ev
     return ++callback_calls == fail_callback ? ESP_ERR_NO_MEM : ESP_OK;
 }
 static void event_cb(bsp_btn_t btn, bsp_btn_ev_t ev, void *u) {
-    assert(btn == BSP_BTN_OK && ev == BSP_BTN_CLICK && u == &events);
+    assert(u == &events);
+    if (ev == BSP_BTN_RELEASE) {
+        assert(btn == BSP_BTN_UP);
+        ++releases;
+        return;
+    }
+    assert(btn == BSP_BTN_OK && ev == BSP_BTN_CLICK);
     ++events;
 }
 static void reset_faults(void) {
@@ -105,7 +111,8 @@ int main(void) {
         reset_faults(); fail_create = i;
         assert(bsp_button_init(event_cb, &events) != ESP_OK); retry_success();
     }
-    for (int i = 1; i <= BSP_BTN_COUNT * 4; ++i) {
+    // 每个按键注册 5 个回调(PRESS/CLICK/DOUBLE/LONG/RELEASE),逐个注入失败。
+    for (int i = 1; i <= BSP_BTN_COUNT * 5; ++i) {
         reset_faults(); fail_callback = i;
         assert(bsp_button_init(event_cb, &events) != ESP_OK); retry_success();
     }
@@ -118,6 +125,7 @@ int main(void) {
     assert(events == 0);
     assert(bsp_button_init(event_cb, &events) == ESP_OK);
     cb_click(NULL, (void *)(intptr_t)BSP_BTN_OK); assert(events == 1);
+    cb_release(NULL, (void *)(intptr_t)BSP_BTN_UP); assert(releases == 1 && events == 1);
     check_voltage(0, BSP_BTN_UP); check_voltage(149, BSP_BTN_UP);
     check_voltage(150, BSP_BTN_DOWN); check_voltage(446, BSP_BTN_DOWN);
     check_voltage(447, BSP_BTN_OK); check_voltage(1899, BSP_BTN_OK);

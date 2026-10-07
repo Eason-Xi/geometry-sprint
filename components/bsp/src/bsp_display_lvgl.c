@@ -27,13 +27,17 @@ static void rounded_flush_event(lv_event_t *event)
 
     const int32_t width = lv_area_get_width(area);
     if (draw_buf->header.stride < (uint32_t)width * sizeof(uint16_t)) return;
+    // 刷新区域是逻辑坐标:横屏时为 320 × 240,遮罩必须按当前逻辑分辨率计算,
+    // 写死 BSP_LCD_W/H 会在横屏下把一整条边涂黑。
+    const int32_t disp_w = lv_display_get_horizontal_resolution(disp);
+    const int32_t disp_h = lv_display_get_vertical_resolution(disp);
 
     for (int32_t y = area->y1; y <= area->y2; ++y) {
         uint16_t *row = (uint16_t *)(draw_buf->data +
                                      (y - area->y1) * draw_buf->header.stride);
         int32_t visible_x1;
         int32_t visible_x2;
-        if (!bsp_display_rounded_row_span(y, BSP_LCD_W, BSP_LCD_H,
+        if (!bsp_display_rounded_row_span(y, disp_w, disp_h,
                                           BSP_LVGL_SCREEN_RADIUS, &visible_x1,
                                           &visible_x2)) {
             memset(row, 0, (size_t)width * sizeof(uint16_t));
@@ -121,6 +125,25 @@ lv_display_t *bsp_lvgl_init(void) {
 
     ESP_LOGI(TAG, "LVGL 就绪，全局圆角=%d，外部填充=黑色", BSP_LVGL_SCREEN_RADIUS);
     return s_disp;
+}
+
+esp_err_t bsp_lvgl_set_orientation(bsp_lvgl_orientation_t orientation) {
+    if (!s_disp) return ESP_ERR_INVALID_STATE;
+    lv_display_rotation_t rotation;
+    switch (orientation) {
+    case BSP_LVGL_PORTRAIT:              rotation = LV_DISPLAY_ROTATION_0; break;
+    case BSP_LVGL_LANDSCAPE_KEYS_TOP:    rotation = (lv_display_rotation_t)BSP_LCD_ROTATION_KEYS_TOP; break;
+    case BSP_LVGL_LANDSCAPE_KEYS_BOTTOM: rotation = (lv_display_rotation_t)BSP_LCD_ROTATION_KEYS_BOTTOM; break;
+    default: return ESP_ERR_INVALID_ARG;
+    }
+    if (!lvgl_port_lock(1000)) return ESP_ERR_TIMEOUT;
+    // esp_lvgl_port 监听分辨率变更事件并改写面板 MADCTL;LVGL 自行交换宽高并整屏重绘。
+    lv_display_set_rotation(s_disp, rotation);
+    lvgl_port_unlock();
+    ESP_LOGI(TAG, "屏幕方向=%d(LVGL 旋转 %d),逻辑分辨率 %ldx%ld", (int)orientation, (int)rotation,
+             (long)lv_display_get_horizontal_resolution(s_disp),
+             (long)lv_display_get_vertical_resolution(s_disp));
+    return ESP_OK;
 }
 
 bool bsp_lvgl_lock(int timeout_ms) {

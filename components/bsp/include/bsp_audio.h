@@ -6,6 +6,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// I2S TX/RX DMA 队列尺寸(bsp_audio.c 建通道时使用的唯一来源)。
+// 播放侧队列容量 = DESC_NUM × FRAME_NUM 帧:bsp_audio_write() 在队列写满后阻塞,
+// 因此持续写入时,刚写入的最后一帧约在该容量对应的时长后才播出
+// (16 kHz 时 6 × 240 / 16000 = 90 ms;32 kHz 时 45 ms)。需要声画同步的应用据此
+// 估算输出延迟,不要在应用里另行复制这些数值。
+#define BSP_AUDIO_DMA_DESC_NUM  6
+#define BSP_AUDIO_DMA_FRAME_NUM 240
+
 // 初始化 codec 与 I2S。内部会调 bsp_i2c_init()(幂等),无需外部先调。成功调用可重复；
 // 失败会释放本次已创建的 codec 接口和 I2S channel，修正故障后可重试。
 esp_err_t bsp_audio_init(void);
